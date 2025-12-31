@@ -1,7 +1,7 @@
 # Headless Chrome AWS Lambda Layer (for Python)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-![Latest build](https://github.com/diegoparrilla/headless-chrome-aws-lambda-layer/actions/workflows/build.yml/badge.svg)
-![Latest release](https://github.com/diegoparrilla/headless-chrome-aws-lambda-layer/actions/workflows/publish.yml/badge.svg?)
+![Latest build](https://github.com/xyqshi/headless-chrome-aws-lambda-layer/actions/workflows/build.yml/badge.svg)
+![Latest release](https://github.com/xyqshi/headless-chrome-aws-lambda-layer/actions/workflows/publish.yml/badge.svg?)
 
 ## TL;DR
 Headless Chrome with Selenium prepared to run as a layer in AWS lambda with Python >=3.8 and Amazon Linux 2
@@ -17,7 +17,7 @@ This layer is designed to be part of a Python 3.8 runtime in AWS Lambda, but pro
 
 ## How to use the image
 
-The developr has to add the `.zip` file found in the [`releases`](https://github.com/diegoparrilla/headless-chrome-aws-lambda-layer/releases) section of this repo as a layer of the AWS Lambda function, or build the layer from scratch first. For example:
+The developr has to add the `.zip` file found in the [`releases`](https://github.com/xyqshi/headless-chrome-aws-lambda-layer/releases) section of this repo as a layer of the AWS Lambda function, or build the layer from scratch first. For example:
 
 ```
 aws s3 cp layer-headless_chrome-v0.2-beta.0.zip s3://<YOUR_BUCKET_NAME>/layer-headless_chrome.zip
@@ -117,4 +117,4 @@ This project is open to collaboration. It was created to run Selenium easily in 
 ## Contact
 
 Do you have an issue? Or perhaps some feedback for how we can improve? Feel free to let us know on
-our [issue tracker](https://github.com/diegoparrilla/headless-chrome-aws-lambda-layer).
+our [issue tracker](https://github.com/xyqshi/headless-chrome-aws-lambda-layer).
