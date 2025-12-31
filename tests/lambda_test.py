@@ -226,13 +226,14 @@ class SeleniumTestCase(unittest.TestCase):
         """ Test if Selenium can read an XPATH from a page """
         # If the documentation site changes this test will fail...
         from headless_chrome import create_driver
+        from selenium.webdriver.common.by import By
 
         driver = create_driver()
         driver.get(
             "https://developers.google.com/web/updates/2017/04/headless-chrome",
         )
-        elem = driver.find_element_by_xpath(
-            '//*[@id="gc-wrapper"]/main/devsite-content/article/h1',
+        elem = driver.find_element(
+            By.XPATH, '//*[@id="gc-wrapper"]/main/devsite-content/article/h1',
         )
         inner_html = elem.get_attribute("innerHTML")
         self.assertGreater(inner_html.count("Headless Chrome"), 0)
@@ -240,12 +241,13 @@ class SeleniumTestCase(unittest.TestCase):
     def test_wait_for_webdriver(self):
         """ Test if Selenium can read wait for an element in a page to render """
         from headless_chrome import create_driver
+        from selenium.webdriver.common.by import By
         from selenium.webdriver.support.ui import WebDriverWait
 
         driver = create_driver()
         driver.get("https://www.msn.com")
         elem_clients = WebDriverWait(driver, timeout=20).until(
-            lambda d: d.find_element_by_xpath('//*[@id="foot"]/footer/a'),
+            lambda d: d.find_element(By.XPATH, '//*[@id="foot"]/footer/a'),
         )
         inner_html = elem_clients.get_attribute("innerHTML")
         self.assertGreater(inner_html.count("Microsoft"), 0)

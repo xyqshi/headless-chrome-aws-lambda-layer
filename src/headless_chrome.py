@@ -19,6 +19,7 @@ import uuid
 
 from selenium.webdriver import Chrome
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
 
 # logging.basicConfig()
 # logging.getLogger().setLevel(logging.INFO)
@@ -152,6 +153,7 @@ def create_driver(custom_config: list = None) -> Chrome:
     )
     options.add_experimental_option("prefs", experimental_prefs)
 
-    driver = Chrome(CHROMEDRIVER_EXEC_PATH, options=options)
+    service = Service(executable_path=CHROMEDRIVER_EXEC_PATH)
+    driver = Chrome(service=service, options=options)
     logging.info("Driver chromedriver initialized in: %s", CHROMEDRIVER_EXEC_PATH)
     return driver
