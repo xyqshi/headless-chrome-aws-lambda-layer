@@ -130,3 +130,5 @@ dmypy.json
 
 # project restricted folders
 layer
+
+.DS_Store
