@@ -27,9 +27,9 @@ TEST_DEFAULT_FUNCTION = lambda_test.lambda_handler
 
 define generate_runtime
 	# Install libraries needed by chromedriver and headless chrome
-	mkdir -p $(LOCAL_LAYER_DIR)/lib $(LOCAL_LAYER_DIR)/share $(LOCAL_LAYER_DIR)/etc
-	docker run --rm --platform linux/arm64 -v "$(LOCAL_LAYER_DIR)/:/lambda/opt" public.ecr.aws/amazonlinux/amazonlinux:2023 \
-		bash -c "dnf install -y glib2 libX11 nss expat fontconfig && \
+	mkdir -p $(LOCAL_LAYER_DIR)/lib $(LOCAL_LAYER_DIR)/etc
+	docker run --rm --platform linux/amd64 -v "$(LOCAL_LAYER_DIR)/:/lambda/opt" public.ecr.aws/amazonlinux/amazonlinux:2 \
+		bash -c "yum install -y glib2 libX11 nss expat fontconfig && \
 		cp -a /usr/lib64/libglib* /usr/lib64/libX11* /usr/lib64/libnss* /usr/lib64/libexpat* /usr/lib64/libfontconfig* /lambda/opt/lib/ 2>/dev/null || true && \
 		cp -a /usr/lib64/libxcb* /usr/lib64/libXau* /lambda/opt/lib/ 2>/dev/null || true && \
 		cp -r /etc/fonts /lambda/opt/etc/ 2>/dev/null || true"
@@ -94,7 +94,7 @@ build: clean
 	# Create build environment
 	mkdir -p $(LOCAL_LAYER_REL_DIR) && mkdir -p $(LOCAL_LAYER_REL_DIR)/python && mkdir -p layer
 	# Add the selenium and default wrapper library
-	docker run --platform linux/arm64 -v "$(PWD):/out" public.ecr.aws/sam/build-$(RUNTIME) \
+	docker run --platform linux/amd64 -v "$(PWD):/out" public.ecr.aws/sam/build-$(RUNTIME) \
 		pip install selenium==$(SELENIUM_VER) -t $(OUT_DIR) && \
 		cp src/$(LAYER_NAME).py $(LOCAL_LAYER_REL_DIR)/python/$(LAYER_NAME).py
 
@@ -124,7 +124,7 @@ clean:
 ## Run test integration suite. It runs like a lambda... bizarre isn't it?
 .PHONY:	test-integration
 test-integration: .expand-layer
-	$(eval res := $(shell docker run --rm --platform linux/arm64 -v "$(TESTS_DIR):/var/task" -v "$(PACKAGES_DIR)/layer-$(LAYER_NAME):/opt" public.ecr.aws/lambda/$(RUNTIME) $(TEST_DEFAULT_FUNCTION)))
+	$(eval res := $(shell docker run --rm --platform linux/amd64 -v "$(TESTS_DIR):/var/task" -v "$(PACKAGES_DIR)/layer-$(LAYER_NAME):/opt" public.ecr.aws/lambda/$(RUNTIME) $(TEST_DEFAULT_FUNCTION)))
 	exit $(res)
 
 ## Create and test the new layer version
