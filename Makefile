@@ -10,6 +10,7 @@ LAYER_NAME := headless_chrome
 
 RUNTIME=python$(PYTHON_VERSION)
 SELENIUM_VER=4.25.0
+# Use smaller serverless-chrome binaries
 CHROME_BINARY_VER=v1.0.0-57
 CHROMEDRIVER_VER=86.0.4240.22
 SWIFTSHADER_VER=v7.0-beta.0
@@ -27,12 +28,31 @@ TEST_DEFAULT_FUNCTION = lambda_test.lambda_handler
 
 define generate_runtime
 	# Install libraries needed by chromedriver and headless chrome
-	mkdir -p $(LOCAL_LAYER_DIR)/lib $(LOCAL_LAYER_DIR)/etc
+	mkdir -p $(LOCAL_LAYER_DIR)/lib $(LOCAL_LAYER_DIR)/etc $(LOCAL_LAYER_DIR)/fonts
 	docker run --rm --platform linux/amd64 -v "$(LOCAL_LAYER_DIR)/:/lambda/opt" public.ecr.aws/amazonlinux/amazonlinux:2 \
-		bash -c "yum install -y glib2 libX11 nss expat fontconfig && \
-		cp -a /usr/lib64/libglib* /usr/lib64/libX11* /usr/lib64/libnss* /usr/lib64/libexpat* /usr/lib64/libfontconfig* /lambda/opt/lib/ 2>/dev/null || true && \
-		cp -a /usr/lib64/libxcb* /usr/lib64/libXau* /lambda/opt/lib/ 2>/dev/null || true && \
-		cp -r /etc/fonts /lambda/opt/etc/ 2>/dev/null || true"
+		bash -c "yum install -y glib2 libX11 libXcomposite libXcursor libXdamage libXext libXi libXtst \
+		cups-libs libXrandr alsa-lib atk at-spi2-atk at-spi2-core pango gtk3 \
+		nss nspr expat fontconfig freetype libdrm mesa-libgbm dbus-libs libxkbcommon \
+		dejavu-sans-fonts google-noto-sans-fonts && \
+		mkdir -p /lambda/opt/lib /lambda/opt/fonts && \
+		for lib in libX11.so libX11-xcb.so libxcb.so libxcb-shm.so libXau.so libXcomposite.so \
+			libXcursor.so libXdamage.so libXext.so libXfixes.so libXi.so libXrandr.so \
+			libXrender.so libXtst.so libXinerama.so libglib-2.0.so libgobject-2.0.so \
+			libgio-2.0.so libnss3.so libnssutil3.so libnspr4.so libplc4.so libplds4.so \
+			libsmime3.so libssl3.so libsoftokn3.so libfreeblpriv3.so libfreebl3.so \
+			libexpat.so libfontconfig.so libfreetype.so \
+			libatk-1.0.so libatk-bridge-2.0.so libatspi.so libpango-1.0.so libpangocairo-1.0.so \
+			libpangoft2-1.0.so libcairo.so libcairo-gobject.so libgdk-3.so libgtk-3.so \
+			libgdk_pixbuf-2.0.so libcups.so libasound.so libdrm.so libgbm.so libdbus-1.so \
+			libxkbcommon.so libfribidi.so libharfbuzz.so libpixman-1.so libpng16.so \
+			libEGL.so libGL.so libwayland-client.so libwayland-cursor.so libwayland-egl.so \
+			libwayland-server.so libffi.so libpcre.so libsqlite3.so; do \
+			find /usr/lib64 -name \"\$${lib}*\" -exec cp -L {} /lambda/opt/lib/ \\; 2>/dev/null || true; \
+		done && \
+		mkdir -p /lambda/opt/etc/fonts && \
+		cp -r /usr/share/fonts/* /lambda/opt/fonts/ 2>/dev/null || true && \
+		echo '<?xml version=\"1.0\"?><!DOCTYPE fontconfig SYSTEM \"fonts.dtd\"><fontconfig><dir>/opt/fonts</dir><cachedir>/tmp/fontconfig</cachedir></fontconfig>' > /lambda/opt/etc/fonts/fonts.conf && \
+		echo 'Libraries copied:' && ls /lambda/opt/lib/ | wc -l && echo 'files'"
 
 	# download chrome driver binary
 	curl -SL $(DRIVER_URL) >chromedriver.zip && \
@@ -42,7 +62,7 @@ define generate_runtime
 	curl -SL $(CHROME_URL) >headless-chromium.zip && \
 		unzip headless-chromium.zip -d $(LOCAL_LAYER_REL_DIR) && rm headless-chromium.zip
 
-	# download swiftshader libraries
+	# download swiftshader libraries (required for GPU emulation)
 	curl -SL $(SWIFTSHADER_URL) >swiftshader.zip && \
 		unzip swiftshader.zip -d $(LOCAL_LAYER_REL_DIR) && rm swiftshader.zip
 
@@ -126,6 +146,11 @@ clean:
 test-integration: .expand-layer
 	$(eval res := $(shell docker run --rm --platform linux/amd64 -v "$(TESTS_DIR):/var/task" -v "$(PACKAGES_DIR)/layer-$(LAYER_NAME):/opt" public.ecr.aws/lambda/$(RUNTIME) $(TEST_DEFAULT_FUNCTION)))
 	exit $(res)
+
+## Run local SAM test
+.PHONY:	test-sam
+test-sam: build
+	./test-local.sh
 
 ## Create and test the new layer version
 .PHONY:	all

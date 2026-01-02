@@ -40,12 +40,15 @@ USER_AGENT: str = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) \
 HEADLESS_CHROMIUM_PARAMS: list = [
     "--headless",
     "--no-sandbox",
+    "--disable-setuid-sandbox",
     "--single-process",
+    "--no-zygote",
     "--disable-dev-shm-usage",
     "--disable-gpu",
     "--hide-scrollbars",
     "--enable-logging",
     "--ignore-certificate-errors",
+    "--remote-debugging-port=0",
     f"--log-level={HEADLESS_CHROMIUM_LOG_LEVEL}",
     f"--v={HEADLESS_CHROMIUM_VERBOSITY_LEVEL}",
     f"--window-size={HEADLESS_CHROMIUM_WINDOW_SIZE}",
@@ -59,6 +62,15 @@ HEADLESS_CHROMIUM_PARAMS: list = [
 # Need to configure the FONTCONFIG_PATH to work
 os.environ["FONTCONFIG_PATH"] = FONTCONFIG_LINUX_PATH
 logging.info("FONTCONFIG_PATH configured: %s", FONTCONFIG_LINUX_PATH)
+
+# Set LD_LIBRARY_PATH to include layer libraries
+LD_LIBRARY_PATH = "/opt/lib:/opt/swiftshader"
+existing_ld_path = os.environ.get("LD_LIBRARY_PATH", "")
+if existing_ld_path:
+    os.environ["LD_LIBRARY_PATH"] = f"{LD_LIBRARY_PATH}:{existing_ld_path}"
+else:
+    os.environ["LD_LIBRARY_PATH"] = LD_LIBRARY_PATH
+logging.info("LD_LIBRARY_PATH configured: %s", os.environ["LD_LIBRARY_PATH"])
 
 
 def _create_folders(tmp_folder: str = None):
@@ -81,6 +93,12 @@ def _create_folders(tmp_folder: str = None):
     if not os.path.exists(tmp_cache_dir):
         os.makedirs(tmp_cache_dir)
         logging.info("Created folder: %s", tmp_cache_dir)
+
+    # Fontconfig cache directory
+    fontconfig_cache = "/tmp/fontconfig"
+    if not os.path.exists(fontconfig_cache):
+        os.makedirs(fontconfig_cache)
+        logging.info("Created fontconfig cache folder: %s", fontconfig_cache)
 
 
 def _configure_download_location(download_location: str = None) -> dict:
@@ -153,7 +171,12 @@ def create_driver(custom_config: list = None) -> Chrome:
     )
     options.add_experimental_option("prefs", experimental_prefs)
 
-    service = Service(executable_path=CHROMEDRIVER_EXEC_PATH)
+    # Create service with environment variables for library paths
+    service_env = os.environ.copy()
+    service_env["LD_LIBRARY_PATH"] = "/opt/lib:/opt/swiftshader:" + service_env.get("LD_LIBRARY_PATH", "")
+    service_env["FONTCONFIG_PATH"] = FONTCONFIG_LINUX_PATH
+    
+    service = Service(executable_path=CHROMEDRIVER_EXEC_PATH, env=service_env)
     driver = Chrome(service=service, options=options)
     logging.info("Driver chromedriver initialized in: %s", CHROMEDRIVER_EXEC_PATH)
     return driver

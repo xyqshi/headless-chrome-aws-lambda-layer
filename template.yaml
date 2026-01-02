@@ -1,0 +1,38 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Headless Chrome Lambda Layer Test
+
+Globals:
+  Function:
+    Timeout: 60
+    MemorySize: 1024
+
+Resources:
+  HeadlessChromeLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: headless-chrome-layer
+      Description: Headless Chrome with Selenium for Lambda
+      ContentUri: layer/layer-headless_chrome-dev.zip
+      CompatibleRuntimes:
+        - python3.12
+      RetentionPolicy: Delete
+
+  TestFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: headless-chrome-test
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.12
+      CodeUri: src/
+      Layers:
+        - !Ref HeadlessChromeLayer
+      Environment:
+        Variables:
+          LD_LIBRARY_PATH: /opt/lib:/opt/swiftshader
+          FONTCONFIG_PATH: /opt/etc/fonts
+
+Outputs:
+  TestFunction:
+    Description: Test Lambda Function ARN
+    Value: !GetAtt TestFunction.Arn
